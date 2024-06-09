@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example.framework</groupId>
+    <artifactId>integral-framework</artifactId>
+    <version>${framewrok.version}</version>
+    <packaging>pom</packaging>
+    <description>公共的库</description>
+    <modules>
+        <module>integral-operation-log</module>
+        <module>integral-framework-common</module>
+    </modules>
+    <properties>
+        <framewrok.version>2.0.1-jdk8-SNAPSHOT</framewrok.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <org.springframework.version>5.2.10.RELEASE</org.springframework.version>
+        <slf4j.version>1.7.32</slf4j.version>
+        <lombok.verison>1.18.20</lombok.verison>
+        <fastjson.version>1.2.83</fastjson.version>
+        <aspectj.version>1.9.6</aspectj.version>
+    </properties>
+
+</project>
