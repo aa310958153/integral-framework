@@ -41,6 +41,7 @@ public class TransactionalMessageAdvisor extends AbstractPointcutAdvisor impleme
 
     private BeanFactory beanFactory;
 
+
     /**
      * Get the Pointcut that drives this advisor.
      */
@@ -78,7 +79,6 @@ public class TransactionalMessageAdvisor extends AbstractPointcutAdvisor impleme
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
-
             if (log.isTraceEnabled()) {
                 log.trace("堆栈信息查看", new Exception());
             }
@@ -92,8 +92,6 @@ public class TransactionalMessageAdvisor extends AbstractPointcutAdvisor impleme
             } finally {
                 TransactionalMessageContext.clear();
             }
-
-
         }
     }
 

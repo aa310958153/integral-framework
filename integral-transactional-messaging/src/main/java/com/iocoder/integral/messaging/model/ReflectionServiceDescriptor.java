@@ -51,6 +51,7 @@ public class ReflectionServiceDescriptor implements ServiceDescriptor {
             List<MethodDescriptor> methodModels = methods.computeIfAbsent(method.getName(), (k) -> new ArrayList<>(1));
             methodModels.add(methodDescriptor);
         }
+
     }
 
     public String getInterfaceName() {
