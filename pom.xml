@@ -12,6 +12,7 @@
     <modules>
         <module>integral-operation-log</module>
         <module>integral-framework-common</module>
+        <module>integral-transactional-messaging</module>
     </modules>
     <properties>
         <framewrok.version>2.0.1-jdk8-SNAPSHOT</framewrok.version>
