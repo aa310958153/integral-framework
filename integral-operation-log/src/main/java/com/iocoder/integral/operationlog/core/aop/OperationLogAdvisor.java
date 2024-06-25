@@ -16,6 +16,7 @@ package com.iocoder.integral.operationlog.core.aop
 
 
 import com.alibaba.fastjson.JSON;
+import com.iocoder.integral.common.utils.SpringELUtil;
 import com.iocoder.integral.operationlog.core.OperationLogMeta;
 import com.iocoder.integral.operationlog.core.OperationLogProcessHandle;
 import com.iocoder.integral.operationlog.core.annotations.OperationLog;
@@ -35,7 +36,6 @@ import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -100,8 +100,7 @@ public class OperationLogAdvisor extends AbstractPointcutAdvisor implements Bean
 
     class MethodOperationLogInterceptor implements MethodInterceptor {
 
-        private String startToken = "#{";
-        private String endToken = "}";
+
         /**
          * 在 jdk 8 以前java源码编译后通过反射是无法获得形参名的，在Java 8及之后，编译的时候可以通过-parameters 为反射生成元信息，可以获取到方法的参数名，但这个行为默认是关闭的,
          * 我们平常用Spring的时候也没有开启, 那在没有开启和jdk 8 以前那在Springmvc项目中是如何获得方法的形参的呢，这个形参可关系到根据参数名称依赖注入和Controller中参数绑定。
@@ -154,20 +153,18 @@ public class OperationLogAdvisor extends AbstractPointcutAdvisor implements Bean
                 // 表达式解析器
                 ExpressionParser parser = new SpelExpressionParser();
                 OperationLogProcessHandle operationLogProcessHandle = beanFactory.getBean(OperationLogProcessHandle.class);
-                OperationLogMeta operationLogMeta = null;
                 if (operationLogProcessHandle == null) {
                     log.error("#139 handleOperationLog 没有日志埋点处理器[OperationLogProcessHandle] 不执行埋点");
                     return;
                 }
                 // 使用spring 工具类 内部会有缓存
                 OperationLog operationLog = AnnotationUtils.findAnnotation(invocation.getMethod(), OperationLog.class);
-                operationLogMeta = new OperationLogMeta();
                 String bathTarget = operationLog.batchTarget();
                 List<OperationLogMeta> operationLogMetas = new ArrayList<>();
                 List<?> batchItems = null;
                 // 批量埋点记录日志
                 if (!"".equals(bathTarget)) {
-                    batchItems = tryParseParameterValue(ctx, parser, List.class, operationLog.batchTarget());
+                    batchItems = SpringELUtil.tryParseParameterValue(ctx, parser, List.class, operationLog.batchTarget());
                     if (batchItems != null && batchItems.size() > 0) {
                         for (Object batchItem : batchItems) {
                             ctx.setVariable("item", batchItem);
@@ -187,7 +184,7 @@ public class OperationLogAdvisor extends AbstractPointcutAdvisor implements Bean
                     return;
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug("#124 日志元数据operationLogProcessHandle={},operationLogMeta={}", operationLogProcessHandle, JSON.toJSONString(operationLogMeta));
+                    log.debug("#124 日志元数据operationLogProcessHandle={},operationLogMeta={}", operationLogProcessHandle, JSON.toJSONString(operationLogMetas));
                 }
                 operationLogProcessHandle.process(operationLogMetas);
             } catch (Exception e) {
@@ -212,7 +209,7 @@ public class OperationLogAdvisor extends AbstractPointcutAdvisor implements Bean
             if (StringUtils.isEmpty(operationLog.notesExpression())) {
                 return true;
             }
-            Boolean notes = parseParameterValue(ctx, parser, Boolean.class, operationLog.notesExpression());
+            Boolean notes = SpringELUtil.parseParameterValue(ctx, parser, Boolean.class, operationLog.notesExpression());
             if (notes == null || !notes) {
                 log.info("#149 条件表达式校验不通过跳过notes={},method={}，Expression={}", notes, invocation.getMethod(), operationLog.notesExpression());
                 return false;
@@ -224,155 +221,20 @@ public class OperationLogAdvisor extends AbstractPointcutAdvisor implements Bean
             if (!StringUtils.isEmpty(el)) {
                 return el;
             }
-            return String.format("%s%s%s%s", startToken, INNER_VARIABLE_PREFIX, innerVariableName, endToken);
+            return String.format("%s%s%s%s", SpringELUtil.START_TOKEN, INNER_VARIABLE_PREFIX, innerVariableName, SpringELUtil.END_TOKEN);
         }
 
         private OperationLogMeta buildOperationLogMeta(EvaluationContext ctx, ExpressionParser parser, OperationLog operationLog) {
             OperationLogMeta operationLogMeta = new OperationLogMeta();
-            operationLogMeta.setAfterValue(tryParseParameterValue(ctx, parser, String.class, operationLog.afterValue()));
-            operationLogMeta.setBeforeValue(tryParseParameterValue(ctx, parser, String.class, operationLog.beforeValue()));
-            operationLogMeta.setDescription(tryParseParameterValue(ctx, parser, String.class, operationLog.description()));
-            operationLogMeta.setIp(tryParseParameterValue(ctx, parser, String.class, adaptInnerVariableExpression(operationLog.ip(), INNER_VARIABLE_IP)));
-            operationLogMeta.setOperationType(tryParseParameterValue(ctx, parser, String.class, operationLog.operationType()));
-            operationLogMeta.setTargetType(tryParseParameterValue(ctx, parser, String.class, operationLog.targetType()));
-            operationLogMeta.setTargetId(tryParseParameterValue(ctx, parser, String.class, operationLog.targetId()));
-            operationLogMeta.setUserId(tryParseParameterValue(ctx, parser, Integer.class, adaptInnerVariableExpression(operationLog.userId(), INNER_VARIABLE_USERID)));
+            operationLogMeta.setAfterValue(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, operationLog.afterValue()));
+            operationLogMeta.setBeforeValue(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, operationLog.beforeValue()));
+            operationLogMeta.setDescription(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, operationLog.description()));
+            operationLogMeta.setIp(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, adaptInnerVariableExpression(operationLog.ip(), INNER_VARIABLE_IP)));
+            operationLogMeta.setOperationType(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, operationLog.operationType()));
+            operationLogMeta.setTargetType(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, operationLog.targetType()));
+            operationLogMeta.setTargetId(SpringELUtil.tryParseParameterValue(ctx, parser, String.class, operationLog.targetId()));
+            operationLogMeta.setUserId(SpringELUtil.tryParseParameterValue(ctx, parser, Integer.class, adaptInnerVariableExpression(operationLog.userId(), INNER_VARIABLE_USERID)));
             return operationLogMeta;
-        }
-
-        public <T> T tryParseParameterValue(EvaluationContext ctx, ExpressionParser parser, Class<T> parameterType, String elValue) {
-            try {
-                return parseParameterValue(ctx, parser, parameterType, elValue);
-            } catch (Exception e) {
-                log.error("#216 解析value出错 elValue={}", elValue, e);
-                return null;
-            }
-        }
-
-        /**
-         * 从参数值中解析出相应的值
-         *
-         * @param ctx           解析表达式的上下文
-         * @param parser        表达式解析器
-         * @param parameterType 参数类型
-         * @param elValue       参数值
-         * @return 参数解析后的值
-         */
-        public <T> T parseParameterValue(EvaluationContext ctx, ExpressionParser parser, Class<T> parameterType, String elValue) {
-            if (log.isDebugEnabled()) {
-                log.debug("#257 parseParameterValue elValue={},parameterType={}", elValue, parameterType);
-            }
-            if (elValue == null || elValue.isEmpty()) {
-                return null;
-            }
-            if (isExpression(elValue)) {
-                Object value = evaluateExpression(ctx, parser, elValue);
-                if (value == null) {
-                    return null;
-                }
-                if (shouldConvertToJson(value, parameterType)) {
-                    return (T) JSON.toJSONString(value);
-                }
-                if (parameterType.isAssignableFrom(String.class)) {
-                    return (T) value.toString();
-                }
-                return (T) value;
-            }
-            String value = evaluateNestedExpressions(ctx, parser, parameterType, elValue);
-            return (T) value;
-        }
-
-        /**
-         * 判断参数值是否为表达式
-         *
-         * @param elValue 参数值
-         * @return 如果参数值是表达式则返回true，否则返回false
-         */
-        private boolean isExpression(String elValue) {
-            return elValue.startsWith(startToken) && elValue.endsWith(endToken);
-        }
-
-        /**
-         * 判断表达式是否应该转换为JSON格式的字符串
-         *
-         * @param value 表达式的值
-         * @return 如果表达式的类型不是字符串、数字、布尔型，则返回true，否则返回false
-         */
-        private boolean shouldConvertToJson(Object value, Class<?> parameterType) {
-            return !(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean) && parameterType.isAssignableFrom(String.class);
-        }
-
-        /**
-         * 对带有嵌套表达式的参数值进行解析
-         * 修改了用户#{userName}的性别为:#{sex}
-         * ->
-         * 修改了用户张三的性别为:男
-         *
-         * @param ctx           解析表达式的上下文
-         * @param parser        表达式解析器
-         * @param parameterType 参数类型
-         * @param elValue       参数值
-         * @return 参数解析后的值
-         */
-        private String evaluateNestedExpressions(EvaluationContext ctx, ExpressionParser parser, Class<?> parameterType, String elValue) {
-            List<String> expressions = extractExpressions(elValue);
-            for (String expression : expressions) {
-                Object value = evaluateExpression(ctx, parser, expression);
-                String strValue = (value == null ? "" : value.toString());
-                elValue = elValue.replace(expression, strValue);
-            }
-
-            if (parameterType.isAssignableFrom(String.class)) {
-                return elValue;
-            }
-            return null;
-        }
-
-        /**
-         * 从带有嵌套表达式的参数值中提取出所有表达式
-         * 如:修改了用户#{userName}的性别为:#{sex} ->["#{userName}","#{sex}"]
-         *
-         * @param elValue 带有嵌套表达式的参数值
-         * @return 所有表达式的列表
-         */
-        private List<String> extractExpressions(String elValue) {
-            List<String> expressions = new ArrayList<>();
-            int startIndex = elValue.indexOf(startToken);
-            while (startIndex >= 0) {
-                int endIndex = elValue.indexOf(endToken, startIndex + startToken.length());
-                if (endIndex < 0) {
-                    break;
-                }
-                String expression = elValue.substring(startIndex, endIndex + 1);
-                expressions.add(expression);
-                startIndex = elValue.indexOf(startToken, endIndex + 1);
-            }
-            return expressions;
-        }
-
-        /**
-         * 对表达式进行求值
-         *
-         * @param ctx     解析表达式的上下文
-         * @param parser  表达式解析器
-         * @param elValue 表达式
-         * @return 表达式的值
-         */
-        private Object evaluateExpression(EvaluationContext ctx, ExpressionParser parser, String elValue) {
-            elValue = convertExpression(elValue);
-            Expression expression = parser.parseExpression(elValue);
-            return expression.getValue(ctx);
-        }
-
-        /**
-         * 转换为标准el #{userId} to  #userId
-         *
-         * @param elValue
-         * @return
-         */
-        public String convertExpression(String elValue) {
-            elValue = "#" + elValue.substring(startToken.length(), elValue.length() - 1);
-            return elValue;
         }
 
 

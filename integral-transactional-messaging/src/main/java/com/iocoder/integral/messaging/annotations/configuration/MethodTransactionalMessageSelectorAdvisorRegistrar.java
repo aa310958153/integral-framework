@@ -23,7 +23,7 @@ public class MethodTransactionalMessageSelectorAdvisorRegistrar implements
             advisor.addPropertyValue("order", order);
         }
 
-        registry.registerBeanDefinition("operationLogAdvisor",
+        registry.registerBeanDefinition("transactionalMessageAdvisor",
                 advisor.getBeanDefinition());
     }
 }
