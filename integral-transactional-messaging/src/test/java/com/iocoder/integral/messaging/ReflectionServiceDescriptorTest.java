@@ -1,6 +1,6 @@
 package com.iocoder.integral.messaging;
 
-import com.iocoder.integral.messaging.model.ReflectionServiceDescriptor;
+import com.iocoder.integral.common.reflection.model.ReflectionServiceDescriptor;
 import org.junit.Test;
 
 public class ReflectionServiceDescriptorTest {

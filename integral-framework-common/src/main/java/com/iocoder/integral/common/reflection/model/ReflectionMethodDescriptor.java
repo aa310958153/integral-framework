@@ -17,7 +17,7 @@
 package com.iocoder.integral.common.reflection.model;
 
 
-import com.iocoder.integral.messaging.utils.ReflectUtils;
+import com.iocoder.integral.common.reflection.ReflectUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
